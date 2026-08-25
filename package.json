@@ -1,0 +1,50 @@
+{
+  "name": "@openclaw/langfuse-exec-env",
+  "version": "v2026.8.25",
+  "description": "Injects per-agent Langfuse credentials into the exec tool's environment via the resolve_exec_env hook, so agent skills (e.g. sql-audit-trace, via npx langfuse-cli or the Langfuse HTTP API) can query Langfuse using that agent's own project credentials. No npm packages required.",
+  "type": "module",
+  "keywords": [
+    "openclaw",
+    "langfuse",
+    "exec-env",
+    "credentials",
+    "observability"
+  ],
+  "author": "",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run build"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./api.js": {
+      "types": "./dist/api.d.ts",
+      "import": "./dist/api.js"
+    }
+  },
+  "files": [
+    "dist",
+    "openclaw.plugin.json",
+    "README.md"
+  ],
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  },
+  "openclaw": {
+    "extensions": [
+      "./dist/index.js"
+    ],
+    "hooks": {},
+    "release": {
+      "publishToNpm": false
+    }
+  }
+}
