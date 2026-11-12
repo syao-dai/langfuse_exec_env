@@ -44,6 +44,22 @@ interface CredentialGroup {
   agentIds?: string[];
 }
 
+// `agentIds` may arrive as a resolved SecretRef string: a JSON array or comma-separated list.
+function normalizeAgentIds(value: unknown): string[] | undefined {
+  if (Array.isArray(value)) return value.map(String).map((s) => s.trim()).filter(Boolean);
+  if (typeof value !== "string") return undefined;
+  const raw = value.trim();
+  if (raw.startsWith("[")) {
+    try {
+      const parsed: unknown = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed.map(String).map((s) => s.trim()).filter(Boolean);
+    } catch {
+      // fall through to comma-separated parsing
+    }
+  }
+  return raw.split(",").map((s) => s.trim()).filter(Boolean);
+}
+
 interface PluginConfig {
   logLevel?: "info" | "debug";
   credentials?: CredentialGroup[];
@@ -67,7 +83,9 @@ export function setupLangfuseExecEnv(api: OpenClawPluginApi): void {
 
   const credentialGroups: Array<CredentialGroup & { publicKey: string; secretKey: string }> = (
     Array.isArray(pluginConfig.credentials) ? pluginConfig.credentials : []
-  ).filter(isValidGroup);
+  )
+    .map((group): CredentialGroup => ({ ...group, agentIds: normalizeAgentIds(group?.agentIds) }))
+    .filter(isValidGroup);
 
   if (credentialGroups.length === 0) {
     api.logger.info(

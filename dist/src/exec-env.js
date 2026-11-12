@@ -1,3 +1,22 @@
+// `agentIds` may arrive as a resolved SecretRef string: a JSON array or comma-separated list.
+function normalizeAgentIds(value) {
+    if (Array.isArray(value))
+        return value.map(String).map((s) => s.trim()).filter(Boolean);
+    if (typeof value !== "string")
+        return undefined;
+    const raw = value.trim();
+    if (raw.startsWith("[")) {
+        try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed))
+                return parsed.map(String).map((s) => s.trim()).filter(Boolean);
+        }
+        catch {
+            // fall through to comma-separated parsing
+        }
+    }
+    return raw.split(",").map((s) => s.trim()).filter(Boolean);
+}
 const DEFAULT_BASE_URL = "http://172.21.0.1:3050";
 export function setupLangfuseExecEnv(api) {
     const pluginConfig = (api.pluginConfig ?? {});
@@ -8,7 +27,9 @@ export function setupLangfuseExecEnv(api) {
             api.logger.info(message);
     };
     const isValidGroup = (group) => Boolean(group?.publicKey?.trim() && group?.secretKey?.trim());
-    const credentialGroups = (Array.isArray(pluginConfig.credentials) ? pluginConfig.credentials : []).filter(isValidGroup);
+    const credentialGroups = (Array.isArray(pluginConfig.credentials) ? pluginConfig.credentials : [])
+        .map((group) => ({ ...group, agentIds: normalizeAgentIds(group?.agentIds) }))
+        .filter(isValidGroup);
     if (credentialGroups.length === 0) {
         api.logger.info("[langfuse-exec-env] No Langfuse credential groups configured. " +
             "Configure via openclaw.json, e.g.:\n" +
